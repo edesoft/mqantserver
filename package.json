@@ -1,0 +1,17 @@
+{
+  "name": "mqantserver",
+  "version": "1.0.0",
+  "repository": "git@github.com:edesoft/mqantserver.git",
+  "author": "Steven Zhang <jdomzhang@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "dev": "node ./build/dev.js",
+    "build": "node ./build/build.js",
+    "serve": "./bin/server --conf bin/conf/server.json --log bin/logs",
+    "win:build": "go build -o ./bin/server.exe ./src/server"
+  },
+  "devDependencies": {
+    "shelljs": "^0.8.3"
+  }
+}

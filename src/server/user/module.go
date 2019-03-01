@@ -44,5 +44,5 @@ func (self *User) OnDestroy() {
 func (self *User) mongodb() (rpc_result string, rpc_err string) {
 
 
-	return fmt.Sprintf("My is Login Module"), ""
+	return fmt.Sprintf("I am Login Module"), ""
 }

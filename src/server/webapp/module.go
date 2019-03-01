@@ -4,15 +4,18 @@
 package webapp
 
 import (
-	"github.com/liangdas/mqant/log"
-	"github.com/liangdas/mqant/conf"
-	"github.com/liangdas/mqant/module"
-	"github.com/gorilla/mux"
-	"net/http"
 	"encoding/json"
 	"net"
-	"github.com/liangdas/mqant/module/base"
+	"net/http"
+	"os"
+	"path/filepath"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/liangdas/mqant/conf"
+	"github.com/liangdas/mqant/log"
+	"github.com/liangdas/mqant/module"
+	basemodule "github.com/liangdas/mqant/module/base"
 )
 
 var Module = func() *Web {
@@ -33,6 +36,12 @@ func (self *Web) Version() string {
 	return "1.0.0"
 }
 func (self *Web) OnInit(app module.App, settings *conf.ModuleSettings) {
+	if settings.Settings["StaticPath"] == "" {
+		if dir, err := filepath.Abs(filepath.Dir(os.Args[0])); err == nil {
+			settings.Settings["StaticPath"] = dir
+			// fmt.Println("setting StaticPath", dir)
+		}
+	}
 	self.BaseModule.OnInit(self, app, settings)
 }
 
@@ -41,31 +50,31 @@ func loggingHandler(next http.Handler) http.Handler {
 		start := time.Now()
 		next.ServeHTTP(w, r)
 		//[26/Oct/2017:19:07:04 +0800]`-`"GET /g/c HTTP/1.1"`"curl/7.51.0"`502`[127.0.0.1]`-`"-"`0.006`166`-`-`127.0.0.1:8030`-`0.000`xd
-		log.Info("%s %s %s [%s] in %v", r.Method,r.URL.Path,r.Proto,r.RemoteAddr, time.Since(start))
+		log.Info("%s %s %s [%s] in %v", r.Method, r.URL.Path, r.Proto, r.RemoteAddr, time.Since(start))
 	})
 }
-func Statushandler (w http.ResponseWriter, r *http.Request) {
+func Statushandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
-		"status":"success",
+		"status": "success",
 	})
 }
 func (self *Web) Run(closeSig chan bool) {
 	//这里如果出现异常请检查8080端口是否已经被占用
 	l, err := net.Listen("tcp", ":8080")
-	if err!=nil{
-		log.Error("webapp server error",err.Error())
+	if err != nil {
+		log.Error("webapp server error", err.Error())
 		return
 	}
 	go func() {
 		log.Info("webapp server Listen : %s", ":8080")
 		root := mux.NewRouter()
-		status:=root.PathPrefix("/status")
+		status := root.PathPrefix("/status")
 		status.HandlerFunc(Statushandler)
 
-		static:=root.PathPrefix("/mqant/")
+		static := root.PathPrefix("/mqant/")
 		static.Handler(http.StripPrefix("/mqant/", http.FileServer(http.Dir(self.GetModuleSettings().Settings["StaticPath"].(string)))))
 		//r.Handle("/static",static)
-		ServeMux:=http.NewServeMux()
+		ServeMux := http.NewServeMux()
 		ServeMux.Handle("/", root)
 		http.Serve(l, loggingHandler(ServeMux))
 	}()
@@ -78,4 +87,3 @@ func (self *Web) OnDestroy() {
 	//一定别忘了关闭RPC
 	self.GetServer().OnDestroy()
 }
-

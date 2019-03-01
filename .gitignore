@@ -38,3 +38,5 @@ _testmain.go
 server.conf.bat
 
 
+tmp
+runner-build-errors.log
